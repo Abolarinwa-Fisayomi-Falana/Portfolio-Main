@@ -1,0 +1,66 @@
+import pandas as pd
+import numpy as np
+
+df_vgs = pd.read_csv("C:/..../..../...vgsales.csv",index_col = 0)
+
+# Data Investigation and Cleansing
+
+
+df_vgs.describe()
+missing_values = df_vgs.isnull().sum()
+
+total_cells = np.prod(df_vgs.shape)
+total_missing = missing_values.sum()
+percentage_missing = ((total_missing / total_cells) *100).round(3)
+
+# display(percentage_missing)
+        # 0.198%
+
+""" Actions Taken:
+
+Nulls found in 'Publisher' and 'Year' columns:
+'Publisher' infilled with "Self-Published"
+Function to identify games with their year in the name to infill 'Year'
+Drop rows with an undetermined year
+
+Check Game Names visually to stress-test logic: 
+    Infill amount is minimal, but missing data to drop is also insignificant
+
+    """
+null_years = df_vgs[df_vgs['Year'].isnull()]
+    # display(null_years)
+with pd.option_context('display.max_rows',None,'display.max_columns',None):
+    print(df_vgs[df_vgs['Year'].isnull()])
+
+df_vgs['Publisher'].fillna('Self-Published', inplace=True)
+def calculate_year_from_name(name):
+
+    if isinstance(name, str) and name[-4:].isdigit():
+        last_two_digits = int(name[-2:])
+ 
+        if 81 <= last_two_digits <= 99: 
+            return 1900 + last_two_digits
+        elif 0 <= last_two_digits <= 20:  
+            return 2000 + last_two_digits
+ 
+    return None
+
+
+df_vgs['Year'] = df_vgs.apply(
+    lambda row: calculate_year_from_name(row['Name']) if pd.isnull(row['Year']) else row['Year'],
+    axis=1)
+df_vgs.isnull().sum()
+df_vgs_dropped = df_vgs.dropna(subset=['Year'])
+
+# display(df_vgs_dropped)
+
+df_vgs_dropped['Year'] = df_vgs_dropped['Year'].astype(int)
+df_vgs_dropped = df_vgs_dropped.rename(columns={'NA_Sales': 'NA_Sales_Millions',
+                                                'EU_Sales': 'EU_Sales_Millions',
+                                                'JP_Sales': 'Japan_Sales_Millions',
+                                                'Other_Sales': 'Other_Sales_Millions',
+                                                'Global_Sales': 'Global_Sales_Millions',})
+
+# display(df_vgs_dropped)
+
+df_vgs_dropped.to_csv("CC:/..../..../...vgsales.csv")
